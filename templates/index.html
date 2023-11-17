@@ -1,0 +1,95 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="modal modal-sheet position-static d-block p-4 py-md-5" tabindex="-1" role="dialog" id="modalSheet">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content rounded-4 shadow">
+                <div class="modal-header border-bottom-0">
+                    <h1 class="modal-title fs-5">Sentiment Analysis</h1>
+                </div>
+                <div class="modal-body py-0">
+                    <form method="post" action="{% url 'sentiment' %}">
+                        {% csrf_token %}
+                        <textarea class="form-control" name="user_input" id="exampleFormControlTextarea1" rows="8"
+                            cols="50" placeholder="Enter text..."></textarea>
+                        <br>
+                        <button type="submit" class="btn btn-lg btn-primary">Analyze</button>
+                        <button type="button" class="btn btn-lg btn-primary" onclick="clearTextarea()">Clear</button>
+                    </form>
+                </div>
+                <div class="modal-footer flex-column align-items-stretch w-100 gap-2 pb-3 border-top-0">
+                    <!-- Display the sentiment analysis results here -->
+                    <div id="sentiment-results">
+                        <p>User Input: <span id="user-input-display">{% if user_input %}{{ user_input }}{% endif %}</span></p>
+                        <p>Sentiment: <span id="sentiment">{% if sentiment %}{{ sentiment }}{% endif %}</span></p>
+                        <p>VADER Result: <span id="vader_result">{% if vader_result %}{{ vader_result|safe }}{% endif %}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+    <script>
+        function clearTextarea() {
+            document.getElementById("exampleFormControlTextarea1").value = "";
+            document.getElementById("user-input-display").textContent = "";
+            document.getElementById("sentiment").textContent = "";
+            document.getElementById("vader_result").textContent = "";
+        }
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Handle form submission
+            const sentimentForm = document.getElementById("sentiment-form");
+            sentimentForm.addEventListener("submit", function (event) {
+                event.preventDefault(); // Prevent the default form submission
+    
+                const user_input = document.getElementById("exampleFormControlTextarea1").value;
+                const csrf_token = document.getElementsByName("csrfmiddlewaretoken")[0].value;
+    
+                // Create a FormData object to serialize the form data
+                const formData = new FormData();
+                formData.append("user_input", user_input);
+                formData.append("csrfmiddlewaretoken", csrf_token);
+
+                // Set the user's input in the "user-input-display" span
+                document.getElementById("user-input-display").textContent = user_input;
+    
+                // Send an AJAX request to your Django view
+                fetch("{% url 'sentiment' %}", {
+                    method: "POST",
+                    body: formData,
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        const sentimentResult = document.getElementById("sentiment");
+                        const vaderResult = document.getElementById("vader_result");
+    
+                        // Update the sentiment and VADER results on the page
+                        sentimentResult.textContent = data.sentiment;
+                        vaderResult.textContent = JSON.stringify(data.vader_result);
+                    })
+                    .catch((error) => {
+                        console.error("Error:", error);
+                    });
+            });
+        });
+    </script>
+      
+    
+</body>
+
+</html>
